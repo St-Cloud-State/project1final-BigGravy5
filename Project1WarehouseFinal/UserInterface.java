@@ -202,6 +202,8 @@ public void displayClientsWishlist(){
 public void processClientsWishlist(){
   //DUMMY TEST
   System.out.println("PROCESS CLIENTS WISHLIST");
+  String name = getToken("Enter client id");
+  Client client = warehouse.searchClientId(name);
 }
 
 public void receiveShipment(){
