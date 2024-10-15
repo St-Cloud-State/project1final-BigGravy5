@@ -12,9 +12,11 @@ public class UserInterface {
   private static final int DISPLAY_PRODUCTS = 4;
   private static final int ADD_PRODUCTS_TO_CLIENTS_WISHLIST = 5;
   private static final int DISPLAY_CLIENTS_WISHLIST = 6;
-  private static final int SAVE = 7;
-  private static final int RETRIEVE = 8;
-  private static final int HELP = 9;
+  private static final int PROCESS_CLIENT_WISHLIST = 7;
+  private static final int RECEIVE_SHIPMENT = 8;
+  private static final int SAVE = 9;
+  private static final int RETRIEVE = 10;
+  private static final int HELP = 11;
   private UserInterface() {
     if (yesOrNo("Look for saved data and  use it?")) {
       retrieve();
@@ -88,7 +90,7 @@ public class UserInterface {
   }
 
   public void help() {
-    System.out.println("Enter a number between 0 and 9 as explained below:");
+    System.out.println("Enter a number between 0 and 10 as explained below:");
     System.out.println(EXIT + " to Exit\n"); //0
     System.out.println(ADD_CLIENT + " to add a client"); //1
     System.out.println(DISPLAY_CLIENTS + " to display clients"); //2
@@ -96,9 +98,11 @@ public class UserInterface {
     System.out.println(DISPLAY_PRODUCTS + " to display products"); //4 
     System.out.println(ADD_PRODUCTS_TO_CLIENTS_WISHLIST + " to add products to a clients wishlist"); //5
     System.out.println(DISPLAY_CLIENTS_WISHLIST + " to display a clients wishlist"); //6
-    System.out.println(SAVE + " to save");
-    System.out.println(RETRIEVE + " to retrieve");
-    System.out.println(HELP + " for help"); //9
+    System.out.println(PROCESS_CLIENT_WISHLIST + " to process a clients wishlist"); //7
+    System.out.println(RECEIVE_SHIPMENT + " to recieve a shipment"); //8
+    System.out.println(SAVE + " to save"); //9
+    System.out.println(RETRIEVE + " to retrieve"); //10
+    System.out.println(HELP + " for help"); //11
   }
 
   public void addClient() {
@@ -194,6 +198,16 @@ public void displayClientsWishlist(){
   client.displayWishlist();
   
 }
+
+public void processClientsWishlist(){
+  //DUMMY TEST
+  System.out.println("PROCESS CLIENTS WISHLIST");
+}
+
+public void receiveShipment(){
+  //DUMMY TEST
+  System.out.println("RECEIVE SHIPMENT")
+}
    
   
   private void save() {
@@ -233,6 +247,10 @@ public void displayClientsWishlist(){
         case ADD_PRODUCTS_TO_CLIENTS_WISHLIST:  addProductToClientsWishlist();
                                 break;
         case DISPLAY_CLIENTS_WISHLIST:   displayClientsWishlist();
+                                break;
+        case PROCESS_CLIENT_WISHLIST: processClientsWishlist();
+                                break;
+        case RECEIVE_SHIPMENT: receiveShipment();
                                 break;
         case SAVE:              save();
                                 break;
