@@ -33,6 +33,20 @@ public class Wishlist implements Serializable {
         }
     }
 
+    public boolean updateProductQuantity(Product product, int newQuantity) {
+        if (newQuantity <= 0){
+            wishlistItems.remove(product);
+            return true;
+        } else {
+            wishlistItems.put(product, newQuantity);
+            return true;
+        }
+    }
+
+    public boolean removeProduct(Product product){
+        return wishlistItems.remove(product) != null;
+    }
+
     // Get all products and their quantities
     public Map<Product, Integer> getWishlistItems() {
         return wishlistItems;

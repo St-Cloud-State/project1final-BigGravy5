@@ -199,11 +199,49 @@ public void displayClientsWishlist(){
   
 }
 
-public void processClientsWishlist(){
-  //DUMMY TEST
-  System.out.println("PROCESS CLIENTS WISHLIST");
-  String name = getToken("Enter client id");
-  Client client = warehouse.searchClientId(name);
+public void processClientsWishlist() {
+    String clientId = getToken("Enter client ID");
+    Client client = warehouse.searchClientId(clientId);
+    
+    if (client == null) {
+        System.out.println("Client not found.");
+        return;
+    }
+
+    Wishlist wishlist = client.getWishlist();
+    if (wishlist.isEmpty()) {
+        System.out.println("The wishlist is empty.");
+        return;
+    }
+
+    Map<Product, Integer> items = wishlist.getWishlistItems();
+    for (Map.Entry<Product, Integer> entry : items.entrySet()) {
+        Product product = entry.getKey();
+        int currentQuantity = entry.getValue();
+        
+        System.out.println("Product: " + product.getName() + " | Quantity: " + currentQuantity);
+        String userChoice = getToken("Options: (1)Change quantity, (2)Remove item, (3)Leave as is");
+        
+        if (userChoice.equalsIgnoreCase("1")) {
+            int newQuantity = Integer.parseInt(getToken("Enter new quantity: "));
+            if (newQuantity <= 0) {
+                wishlist.removeProduct(product);
+                System.out.println("Product removed from wishlist.");
+            } else {
+                wishlist.updateProductQuantity(product, newQuantity);
+                System.out.println("Product quantity updated.");
+            }
+        } else if (userChoice.equalsIgnoreCase("2")) {
+            wishlist.removeProduct(product);
+            System.out.println("Product removed from wishlist.");
+        } else {
+            System.out.println("Leaving product as is.");
+        }
+    }
+    
+    System.out.println("Wishlist processing complete");
+    
+    createOrderFromWishlist(client); // This method will handle the actual order creation
 }
 
 public void receiveShipment(){
