@@ -214,6 +214,9 @@ public void processClientsWishlist() {
         return;
     }
 
+    // Initialize the orderItems map to store the final order
+    Map<Product, Integer> orderItems = new HashMap<>();
+
     Map<Product, Integer> items = wishlist.getWishlistItems();
     for (Map.Entry<Product, Integer> entry : items.entrySet()) {
         Product product = entry.getKey();
@@ -229,31 +232,36 @@ public void processClientsWishlist() {
                 System.out.println("Product removed from wishlist.");
             } else {
                 wishlist.updateProductQuantity(product, newQuantity);
+                orderItems.put(product, newQuantity);  // Add the updated quantity to orderItems
                 System.out.println("Product quantity updated.");
             }
         } else if (userChoice.equalsIgnoreCase("2")) {
             wishlist.removeProduct(product);
             System.out.println("Product removed from wishlist.");
         } else {
+            orderItems.put(product, currentQuantity);  // Keep the current quantity in orderItems
             System.out.println("Leaving product as is.");
         }
     }
     
     System.out.println("Wishlist processing complete");
-    
+
+    // Create an invoice using the finalized orderItems
     Invoice invoice = new Invoice(client, orderItems);
     client.addInvoice(invoice);
 
+    // Clear the wishlist after processing
     wishlist.getWishlistItems().clear();
-    System.out.println("Wishlist has been cleared. Order has been placed")
+    System.out.println("Wishlist has been cleared. Order has been placed");
 
+    // Display the generated invoice
     System.out.println("Generated Invoice:");
     System.out.println(invoice.toString());
 }
 
 public void receiveShipment(){
   //DUMMY TEST
-  System.out.println("RECEIVE SHIPMENT")
+  System.out.println("RECEIVE SHIPMENT");
 }
    
   
