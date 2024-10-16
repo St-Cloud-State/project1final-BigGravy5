@@ -241,7 +241,14 @@ public void processClientsWishlist() {
     
     System.out.println("Wishlist processing complete");
     
-    createOrderFromWishlist(client); // This method will handle the actual order creation
+    Invoice invoice = new Invoice(client, orderItems);
+    client.addInvoice(invoice);
+
+    wishlist.getWishlistItems().clear();
+    System.out.println("Wishlist has been cleared. Order has been placed")
+
+    System.out.println("Generated Invoice:");
+    System.out.println(invoice.toString());
 }
 
 public void receiveShipment(){

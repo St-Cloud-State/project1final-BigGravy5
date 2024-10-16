@@ -7,6 +7,7 @@ public class Client implements Serializable {
     private String address;
     private String phone;
     private Wishlist wishlist;
+    private List<Invoice> invoiceList;
     private static final String CLIENT_STRING = "C";
     private static final long serialVersionUID = 1L;
 
@@ -14,6 +15,7 @@ public class Client implements Serializable {
         this.name = name;
         this.address = address;
         this.phone = phone;
+        this.invoiceList = new LinkedList<>();
         id = CLIENT_STRING + ClientIdServer.instance().getId();
         wishlist = new Wishlist();
     }
@@ -40,6 +42,14 @@ public class Client implements Serializable {
 
     public void displayWishlist() {
         wishlist.displayWishlist();
+    }
+
+    public List<Invoice> getInvoices(){
+        return invoiceList;
+    }
+
+    public void addInvoice(Invoice invoice){
+        invoiceList.add(invoice);
     }
 
     @Override
