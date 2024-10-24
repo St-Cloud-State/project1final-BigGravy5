@@ -14,9 +14,10 @@ public class UserInterface {
   private static final int DISPLAY_CLIENTS_WISHLIST = 6;
   private static final int PROCESS_CLIENT_WISHLIST = 7;
   private static final int RECEIVE_SHIPMENT = 8;
-  private static final int SAVE = 9;
-  private static final int RETRIEVE = 10;
-  private static final int HELP = 11;
+  private static final int DISPLAY_INVOICES = 9;
+  private static final int SAVE = 10;
+  private static final int RETRIEVE = 11;
+  private static final int HELP = 12;
   private UserInterface() {
     if (yesOrNo("Look for saved data and  use it?")) {
       retrieve();
@@ -100,9 +101,10 @@ public class UserInterface {
     System.out.println(DISPLAY_CLIENTS_WISHLIST + " to display a clients wishlist"); //6
     System.out.println(PROCESS_CLIENT_WISHLIST + " to process a clients wishlist"); //7
     System.out.println(RECEIVE_SHIPMENT + " to recieve a shipment"); //8
-    System.out.println(SAVE + " to save"); //9
-    System.out.println(RETRIEVE + " to retrieve"); //10
-    System.out.println(HELP + " for help"); //11
+    System.out.println(DISPLAY_INVOICES + " to display client's invoices"); //9
+    System.out.println(SAVE + " to save"); //10
+    System.out.println(RETRIEVE + " to retrieve"); //11
+    System.out.println(HELP + " for help"); //12
   }
 
   public void addClient() {
@@ -159,109 +161,160 @@ public void showProducts() {
 
 
 public void addProductToClientsWishlist() {
-    String name = getToken("Enter client ID");
-    Client client = warehouse.searchClientId(name);
+    String clientId = getToken("Enter client ID");
+    Client client = warehouse.searchClientId(clientId);
 
-    if (client != null) {
-        boolean moreProducts = true;
-        while (moreProducts) {
-            String productName = getToken("Enter product name");
-            Product product = warehouse.searchProductName(productName);
+    if (!isValidClient(client)) return;
 
-            if (product != null) {
-                int quantity = Integer.parseInt(getToken("Enter quantity"));
-                boolean added = warehouse.addToWishlist(client, product, quantity);
+    boolean moreProducts = true;
+    while (moreProducts) {
+        String productName = getToken("Enter product name");
+        Product product = warehouse.searchProductName(productName);
 
-                if (added) {
-                    System.out.println("Product added to wishlist: " + product.getName() + " (Quantity: " + quantity + ")");
-                } else {
-                    System.out.println("Failed to add product to wishlist");
-                }
+        if (product != null) {
+            int quantity = Integer.parseInt(getToken("Enter quantity"));
+            boolean added = warehouse.addToWishlist(client, product, quantity);
+
+            if (added) {
+                System.out.println("Product added to wishlist: " + product.getName() + " (Quantity: " + quantity + ")");
             } else {
-                System.out.println("Product does not exist");
+                System.out.println("Failed to add product to wishlist");
             }
-
-            // Ask the user if they want to add another product to the wishlist
-            String more = getToken("Do you want to add another product to the client's wishlist? (Y|y for yes, any other key for no): ");
-            if (!more.equalsIgnoreCase("y")) {
-                moreProducts = false;  // Exit the loop if the user doesn't want to add more
-            }
+        } else {
+            System.out.println("Product does not exist");
         }
-    } else {
-        System.out.println("Client does not exist");
+
+        String more = getToken("Do you want to add another product to the client's wishlist? (Y|y for yes, any other key for no): ");
+        if (!more.equalsIgnoreCase("y")) {
+            moreProducts = false;
+        }
     }
 }
 
-public void displayClientsWishlist(){
-  String name = getToken("Enter client id");
-  Client client = warehouse.searchClientId(name);
-  client.displayWishlist();
-  
+public void displayClientsWishlist() {
+    String clientId = getToken("Enter client ID");
+    Client client = warehouse.searchClientId(clientId);
+
+    if (!isValidClient(client)) return;
+
+    Wishlist wishlist = client.getWishlist();
+    if (isWishlistEmpty(wishlist)) return;
+
+    client.displayWishlist();
 }
 
 public void processClientsWishlist() {
     String clientId = getToken("Enter client ID");
     Client client = warehouse.searchClientId(clientId);
-    
-    if (client == null) {
-        System.out.println("Client not found.");
-        return;
-    }
+
+    if (!isValidClient(client)) return;
 
     Wishlist wishlist = client.getWishlist();
+    if (isWishlistEmpty(wishlist)) return;
+
+    Map<Product, Integer> orderItems = processWishlistItems(wishlist);
+
+    if (!orderItems.isEmpty()) {
+        createInvoiceForClient(client, orderItems);
+        wishlist.getWishlistItems().clear();
+        System.out.println("Wishlist has been cleared. Order has been placed.");
+    } else {
+        System.out.println("No items left in the wishlist. No order created.");
+    }
+}
+
+private boolean isValidClient(Client client) {
+    if (client == null) {
+        System.out.println("Client not found.");
+        return false;
+    }
+    return true;
+}
+
+private boolean isWishlistEmpty(Wishlist wishlist) {
     if (wishlist.isEmpty()) {
         System.out.println("The wishlist is empty.");
-        return;
+        return true;
     }
+    return false;
+}
 
-    // Initialize the orderItems map to store the final order
+private Map<Product, Integer> processWishlistItems(Wishlist wishlist) {
     Map<Product, Integer> orderItems = new HashMap<>();
-
     Map<Product, Integer> items = wishlist.getWishlistItems();
+
     for (Map.Entry<Product, Integer> entry : items.entrySet()) {
         Product product = entry.getKey();
         int currentQuantity = entry.getValue();
-        
+
         System.out.println("Product: " + product.getName() + " | Quantity: " + currentQuantity);
         String userChoice = getToken("Options: (1)Change quantity, (2)Remove item, (3)Leave as is");
-        
-        if (userChoice.equalsIgnoreCase("1")) {
+
+        handleUserChoice(wishlist, orderItems, product, currentQuantity, userChoice);
+    }
+
+    System.out.println("Wishlist processing complete");
+    return orderItems;
+}
+
+private void handleUserChoice(Wishlist wishlist, Map<Product, Integer> orderItems, 
+                              Product product, int currentQuantity, String userChoice) {
+    switch (userChoice) {
+        case "1": // Change quantity
             int newQuantity = Integer.parseInt(getToken("Enter new quantity: "));
             if (newQuantity <= 0) {
                 wishlist.removeProduct(product);
                 System.out.println("Product removed from wishlist.");
             } else {
                 wishlist.updateProductQuantity(product, newQuantity);
-                orderItems.put(product, newQuantity);  // Add the updated quantity to orderItems
+                orderItems.put(product, newQuantity);
                 System.out.println("Product quantity updated.");
             }
-        } else if (userChoice.equalsIgnoreCase("2")) {
+            break;
+        case "2": // Remove item
             wishlist.removeProduct(product);
             System.out.println("Product removed from wishlist.");
-        } else {
-            orderItems.put(product, currentQuantity);  // Keep the current quantity in orderItems
+            break;
+        default: // Leave as is
+            orderItems.put(product, currentQuantity);
             System.out.println("Leaving product as is.");
-        }
+            break;
     }
-    
-    System.out.println("Wishlist processing complete");
+}
 
-    // Create an invoice using the finalized orderItems
+private void createInvoiceForClient(Client client, Map<Product, Integer> orderItems) {
     Invoice invoice = new Invoice(client, orderItems);
     client.addInvoice(invoice);
-
-    // Clear the wishlist after processing
-    wishlist.getWishlistItems().clear();
-    System.out.println("Wishlist has been cleared. Order has been placed");
-
-    // Display the generated invoice
     System.out.println("Generated Invoice:");
     System.out.println(invoice.toString());
 }
 
+
+
 public void receiveShipment(){
   //DUMMY TEST
   System.out.println("RECEIVE SHIPMENT");
+}
+
+public void displayInvoices() {
+    String clientId = getToken("Enter client ID");
+    Client client = warehouse.searchClientId(clientId);
+
+    if (!isValidClient(client)) return;
+
+    Iterator<Invoice> invoiceIterator = client.getInvoiceIterator();
+
+    if (!invoiceIterator.hasNext()) {
+        System.out.println("No invoices found for this client.");
+        return;
+    }
+
+    System.out.println("Invoices for client: " + client.getName());
+
+    while (invoiceIterator.hasNext()) {
+        Invoice invoice = invoiceIterator.next();
+        System.out.println(invoice.toString());
+    }
 }
    
   
@@ -306,6 +359,8 @@ public void receiveShipment(){
         case PROCESS_CLIENT_WISHLIST: processClientsWishlist();
                                 break;
         case RECEIVE_SHIPMENT: receiveShipment();
+                                break;
+        case DISPLAY_INVOICES: displayInvoices();
                                 break;
         case SAVE:              save();
                                 break;

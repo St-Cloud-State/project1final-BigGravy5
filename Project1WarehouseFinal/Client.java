@@ -44,8 +44,8 @@ public class Client implements Serializable {
         wishlist.displayWishlist();
     }
 
-    public List<Invoice> getInvoices(){
-        return invoiceList;
+    public Iterator<Invoice> getInvoiceIterator() {
+        return invoiceList.iterator();
     }
 
     public void addInvoice(Invoice invoice){
