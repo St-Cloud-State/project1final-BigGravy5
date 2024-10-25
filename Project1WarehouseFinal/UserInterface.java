@@ -15,9 +15,10 @@ public class UserInterface {
   private static final int PROCESS_CLIENT_WISHLIST = 7;
   private static final int RECEIVE_SHIPMENT = 8;
   private static final int DISPLAY_INVOICES = 9;
-  private static final int SAVE = 10;
-  private static final int RETRIEVE = 11;
-  private static final int HELP = 12;
+  private static final int DISPLAY_PRODUCT_WAITLIST = 10;
+  private static final int SAVE = 11;
+  private static final int RETRIEVE = 12;
+  private static final int HELP = 13;
   private UserInterface() {
     if (yesOrNo("Look for saved data and  use it?")) {
       retrieve();
@@ -91,7 +92,7 @@ public class UserInterface {
   }
 
   public void help() {
-    System.out.println("Enter a number between 0 and 10 as explained below:");
+    System.out.println("Enter a number between 0 and 13 as explained below:");
     System.out.println(EXIT + " to Exit\n"); //0
     System.out.println(ADD_CLIENT + " to add a client"); //1
     System.out.println(DISPLAY_CLIENTS + " to display clients"); //2
@@ -102,9 +103,10 @@ public class UserInterface {
     System.out.println(PROCESS_CLIENT_WISHLIST + " to process a clients wishlist"); //7
     System.out.println(RECEIVE_SHIPMENT + " to recieve a shipment"); //8
     System.out.println(DISPLAY_INVOICES + " to display client's invoices"); //9
-    System.out.println(SAVE + " to save"); //10
-    System.out.println(RETRIEVE + " to retrieve"); //11
-    System.out.println(HELP + " for help"); //12
+    System.out.println(DISPLAY_PRODUCT_WAITLIST + " to display a products waitlist"); //10
+    System.out.println(SAVE + " to save"); //11
+    System.out.println(RETRIEVE + " to retrieve"); //12
+    System.out.println(HELP + " for help"); //13
   }
 
   public void addClient() {
@@ -203,6 +205,7 @@ public void displayClientsWishlist() {
     client.displayWishlist();
 }
 
+
 public void processClientsWishlist() {
     String clientId = getToken("Enter client ID");
     Client client = warehouse.searchClientId(clientId);
@@ -212,7 +215,54 @@ public void processClientsWishlist() {
     Wishlist wishlist = client.getWishlist();
     if (isWishlistEmpty(wishlist)) return;
 
-    Map<Product, Integer> orderItems = processWishlistItems(wishlist);
+    Map<Product, Integer> orderItems = new HashMap<>();
+
+    Map<Product, Integer> items = wishlist.getWishlistItems();
+    for (Map.Entry<Product, Integer> entry : items.entrySet()) {
+        Product product = entry.getKey();
+        int requestedQuantity = entry.getValue();
+        int availableStock = product.getStock();
+
+        System.out.println("Product: " + product.getName() + " | Requested: " + requestedQuantity + " | Available: " + availableStock);
+        String userChoice = getToken("Options: (1)Change quantity, (2)Remove item, (3)Leave as is");
+
+        // Handle user choice
+        if (userChoice.equalsIgnoreCase("1")) {
+            // Update quantity
+            int newQuantity = Integer.parseInt(getToken("Enter new quantity: "));
+            if (newQuantity <= 0) {
+                wishlist.removeProduct(product);
+                System.out.println("Product removed from wishlist.");
+                continue; // Skip further processing for this product
+            } else {
+                wishlist.updateProductQuantity(product, newQuantity); // Update the quantity in the wishlist
+                requestedQuantity = newQuantity; // Update requestedQuantity to reflect the new value
+            }
+        } else if (userChoice.equalsIgnoreCase("2")) {
+            wishlist.removeProduct(product);
+            System.out.println("Product removed from wishlist.");
+            continue; // Skip further processing for this product
+        }
+
+        // Check if the requested quantity exceeds available stock
+        if (requestedQuantity > availableStock) {
+            int fulfilledQuantity = availableStock;
+            int waitlistedQuantity = requestedQuantity - availableStock;
+
+            // Update the stock and fulfill only what is available
+            product.reduceStock(fulfilledQuantity);
+            orderItems.put(product, fulfilledQuantity);
+
+            // Add the remaining quantity to the waitlist
+            product.addToWaitlist(client, waitlistedQuantity);
+            System.out.println("Only " + fulfilledQuantity + " of " + requestedQuantity + " could be fulfilled. Remaining " +
+                                waitlistedQuantity + " has been added to the waitlist.");
+        } else {
+            // Fulfill the entire order if stock is sufficient
+            product.reduceStock(requestedQuantity);
+            orderItems.put(product, requestedQuantity);
+        }
+    }
 
     if (!orderItems.isEmpty()) {
         createInvoiceForClient(client, orderItems);
@@ -222,6 +272,7 @@ public void processClientsWishlist() {
         System.out.println("No items left in the wishlist. No order created.");
     }
 }
+
 
 private boolean isValidClient(Client client) {
     if (client == null) {
@@ -287,6 +338,25 @@ private void createInvoiceForClient(Client client, Map<Product, Integer> orderIt
     client.addInvoice(invoice);
     System.out.println("Generated Invoice:");
     System.out.println(invoice.toString());
+}
+
+public void displayProductWaitlist() {
+    String productName = getToken("Enter product name");
+    Product product = warehouse.searchProductName(productName);
+
+    if (product == null) {
+        System.out.println("Product not found.");
+        return;
+    }
+
+    Waitlist waitlist = product.getWaitlist();
+    if (waitlist.isEmpty()) {
+        System.out.println("No waitlist entries for this product.");
+        return;
+    }
+
+    System.out.println("Waitlist for product: " + product.getName());
+    System.out.println(waitlist.toString());
 }
 
 
@@ -361,6 +431,8 @@ public void displayInvoices() {
         case RECEIVE_SHIPMENT: receiveShipment();
                                 break;
         case DISPLAY_INVOICES: displayInvoices();
+                                break;
+        case DISPLAY_PRODUCT_WAITLIST: displayProductWaitlist();
                                 break;
         case SAVE:              save();
                                 break;
