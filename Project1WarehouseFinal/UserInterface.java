@@ -113,7 +113,7 @@ public class UserInterface {
     String name = getToken("Enter client name");
     String address = getToken("Enter address");
     String phone = getToken("Enter phone");
-    Client result = warehouse.addClient(name, address, phone); // Use the warehouse instance instead of Warehouse
+    Client result = warehouse.addClient(name, address, phone); 
     if (result == null) {
         System.out.println("Could not add client");
     } else {
